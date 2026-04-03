@@ -421,6 +421,17 @@ function generate() {
       utm_campaign: '2026mc',
       utm_content: location
     };
+    // When going direct to RedPodium, add registrants.source prefill
+    // so the Source field is populated in the registrant export.
+    // (When going via marincentury.com, the site's passthrough script handles this.)
+    var isRedPodium = dest.indexOf('redpodium') > -1;
+    if (isRedPodium) {
+      var parts = [];
+      Object.keys(params).forEach(function(k) {
+        parts.push(k.replace('utm_', '') + ':' + params[k]);
+      });
+      params['registrants.source'] = parts.join('|');
+    }
     var qs = Object.keys(params).map(function(k) {
       return k + '=' + encodeURIComponent(params[k]);
     }).join('&');
