@@ -319,7 +319,7 @@ select{cursor:pointer}
       <div class="full-width">
         <label>Location / Description</label>
         <input type="text" id="location" placeholder="e.g. mikes_bikes_san_rafael" oninput="enforceSlug(this)">
-        <div class="field-hint">Lowercase with underscores only — no spaces (e.g. sports_basement_presidio)</div>
+        <div class="field-hint">Lowercase with underscores only — no spaces (e.g. sports_basement_presidio). This will be appended after <code>redpod_</code> or <code>website_</code> in <code>utm_content</code>.</div>
       </div>
       <div class="full-width">
         <label>Contact Person (optional)</label>
@@ -415,22 +415,25 @@ function generate() {
     grid.innerHTML = '<span class="utm-key">type</span><span class="utm-val">email</span>'
       + '<span class="utm-key">to</span><span class="utm-val">' + dest.replace('mailto:','') + '</span>';
   } else {
+    var isRedPodium = dest.indexOf('redpodium') > -1;
+    var trafficPath = isRedPodium ? 'redpod' : 'website';
+    var utmContent = trafficPath + '_' + location;
+    var registrantsSourceValue = 'source:' + sourceVal
+      + '|medium:print'
+      + '|campaign:2026mc'
+      + '|content:' + utmContent;
+
     var params = {
       utm_source: sourceVal,
       utm_medium: 'print',
       utm_campaign: '2026mc',
-      utm_content: location
+      utm_content: utmContent
     };
-    // When going direct to RedPodium, add registrants.source prefill
-    // so the Source field is populated in the registrant export.
-    // (When going via marincentury.com, the site's passthrough script handles this.)
-    var isRedPodium = dest.indexOf('redpodium') > -1;
+    // Only append registrants.source directly to RedPodium URLs.
+    // For MarinCentury.com, we still show the exact value in the summary
+    // so the team can verify what should flow through to RedPodium.
     if (isRedPodium) {
-      var parts = [];
-      Object.keys(params).forEach(function(k) {
-        parts.push(k.replace('utm_', '') + ':' + params[k]);
-      });
-      params['registrants.source'] = parts.join('|');
+      params['registrants.source'] = registrantsSourceValue;
     }
     var qs = Object.keys(params).map(function(k) {
       return k + '=' + encodeURIComponent(params[k]);
@@ -445,6 +448,9 @@ function generate() {
     Object.keys(params).forEach(function(k) {
       grid.innerHTML += '<span class="utm-key">' + k + '</span><span class="utm-val">' + params[k] + '</span>';
     });
+    if (!isRedPodium) {
+      grid.innerHTML += '<span class="utm-key">registrants.source</span><span class="utm-val">' + registrantsSourceValue + '</span>';
+    }
   }
 
   currentData = {
@@ -457,7 +463,8 @@ function generate() {
     utm_source: isEmail ? '' : sourceVal,
     utm_medium: isEmail ? '' : 'print',
     utm_campaign: isEmail ? '' : '2026mc',
-    utm_content: isEmail ? '' : location,
+    utm_content: isEmail ? '' : ((dest.indexOf('redpodium') > -1 ? 'redpod' : 'website') + '_' + location),
+    registrants_source: isEmail ? '' : ('source:' + sourceVal + '|medium:print|campaign:2026mc|content:' + ((dest.indexOf('redpodium') > -1 ? 'redpod' : 'website') + '_' + location)),
     full_url: currentURL
   };
 
