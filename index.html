@@ -245,17 +245,8 @@ select{cursor:pointer}
   background:#eef5ee;
 }
 
-.email-note{
-  font-size:12px;
-  color:#A07D2E;
-  margin-top:6px;
-  font-style:italic;
-  background:#FFF8E8;
-  padding:6px 10px;
-  border-radius:6px;
-  border:1px solid #E8D9A8;
-}
-.field-hint{font-size:11px;color:#7a9a7a;margin-top:4px}
+.field-hint{font-size:12.5px;color:#2E5A3C;margin-top:6px;font-weight:700;line-height:1.45}
+.field-hint code{background:#eef5ee;padding:1px 5px;border-radius:4px;font-size:11.5px;font-weight:600}
 
 .footer{
   text-align:center;
@@ -290,72 +281,79 @@ select{cursor:pointer}
   <div class="card">
     <div class="form-grid">
       <div>
-        <label>Placement Type</label>
-        <select id="ptype" onchange="toggleOther()">
+        <label>Medium</label>
+        <select id="medium" onchange="onMediumChange()">
           <option value="">Select...</option>
-          <option value="postcard">Postcard</option>
-          <option value="yardsign">Yard sign</option>
-          <option value="flyer">Flyer</option>
-          <option value="banner">Banner</option>
-          <option value="poster">Poster</option>
-          <option value="event">Event handout</option>
-          <option value="sticker">Sticker</option>
-          <option value="other">Other</option>
+          <option value="print">Print</option>
+          <option value="email">Email</option>
+          <option value="web">Web</option>
+          <option value="social">Social</option>
+          <option value="referral">Referral</option>
         </select>
-        <div class="other-field hidden" id="other-wrap">
-          <input type="text" id="ptype-other" placeholder="Describe placement type">
-        </div>
       </div>
       <div>
+        <label>Source</label>
+        <select id="source" onchange="onSourceChange()" disabled>
+          <option value="">Select medium first</option>
+        </select>
+        <div class="other-field hidden" id="other-wrap">
+          <input type="text" id="source-other" placeholder="Specify source" oninput="enforceSlug(this)">
+        </div>
+      </div>
+      <div class="full-width">
         <label>Destination</label>
-        <select id="dest" onchange="toggleEmailNote()">
+        <select id="dest">
           <option value="https://marincentury.redpodium.com/2026-marin-century">RedPodium registration</option>
           <option value="https://marincentury.com">MarinCentury.com</option>
-          <option value="mailto:ridedirector@marincyclists.com">ridedirector@marincyclists.com</option>
-          <option value="mailto:volunteers@marincyclists.com">volunteers@marincyclists.com</option>
         </select>
-        <div class="email-note hidden" id="email-note">Email destinations generate a QR code only (no UTM tracking)</div>
       </div>
       <div class="full-width">
         <label>Location / Description</label>
-        <input type="text" id="location" placeholder="e.g. mikes_bikes_san_rafael" oninput="enforceSlug(this)">
-        <div class="field-hint">Lowercase with underscores only — no spaces (e.g. sports_basement_presidio). This will be appended after <code>redpod_</code> or <code>website_</code> in <code>utm_content</code>.</div>
+        <input type="text" id="location" placeholder="e.g. sports_basement_presidio, jan_newsletter, homepage_hero" oninput="enforceSlug(this)">
+        <div class="field-hint">Lowercase with underscores only — no spaces (e.g. <code>sports_basement_presidio</code>, <code>jan_newsletter</code>). This becomes the <code>utm_content</code> value.</div>
       </div>
       <div class="full-width">
         <label>Contact Person (optional)</label>
         <input type="text" id="contact" placeholder="e.g. Jeff">
       </div>
-      <button class="gen-btn" onclick="generate()">Generate QR Code + UTM</button>
+      <button class="gen-btn" onclick="generate()" id="gen-btn">Generate Tracking URL</button>
     </div>
   </div>
 
   <div class="hidden" id="output">
     <div class="card">
-      <div class="section-label" id="url-section-label">Generated UTM URL</div>
+      <div class="section-label" id="url-section-label">Generated Tracking URL</div>
       <div class="url-box">
-        <div class="url-label" id="url-label-text">Full URL with tracking parameters</div>
+        <div class="url-label">Full URL with tracking parameters</div>
         <div id="url-text"></div>
       </div>
       <div class="utm-grid" id="utm-grid"></div>
     </div>
 
-    <div class="card">
+    <div class="card" id="qr-card">
       <div class="section-label">QR Code with Marin Century Logo</div>
       <div class="qr-section">
         <div class="qr-canvas-wrap">
           <canvas id="qr-canvas" width="400" height="400"></canvas>
         </div>
         <div class="qr-actions">
-          <button class="act-btn" id="copy-btn" onclick="copyURL()">Copy URL</button>
+          <button class="act-btn" id="copy-btn-qr" onclick="copyURL()">Copy URL</button>
           <button class="act-btn" onclick="downloadQR('png')">Download QR (PNG)</button>
           <button class="act-btn" onclick="downloadQR('svg')">Download QR (SVG)</button>
-          <div class="save-inset">
-            <div class="save-title">Don't forget to save this!</div>
-            <div class="save-subtitle">Log this QR code to the shared tracking sheet so the team can see it</div>
-            <button class="save-btn-big" id="save-btn" onclick="logToSheet()">Save to Tracking Sheet</button>
-            <div class="log-status" id="log-status" style="display:none"></div>
-          </div>
         </div>
+      </div>
+    </div>
+
+    <div class="card hidden" id="url-only-actions">
+      <button class="act-btn" id="copy-btn" onclick="copyURL()" style="width:100%;padding:14px;font-size:14px">Copy URL</button>
+    </div>
+
+    <div class="card">
+      <div class="save-inset">
+        <div class="save-title">Don't forget to save this!</div>
+        <div class="save-subtitle">Log this to the shared tracking sheet so the team can see it</div>
+        <button class="save-btn-big" id="save-btn" onclick="logToSheet()">Save to Tracking Sheet</button>
+        <div class="log-status" id="log-status" style="display:none"></div>
       </div>
     </div>
   </div>
@@ -372,18 +370,46 @@ var currentData = {};
 var logoImg = new Image();
 logoImg.src = LOGO_B64;
 
-function toggleOther() {
-  var v = document.getElementById('ptype').value;
+// Source options per medium. "other" always reveals a free-text input.
+var SOURCES = {
+  print:    [['postcard','Postcard'],['yardsign','Yard sign'],['flyer','Flyer'],['banner','Banner'],['poster','Poster'],['event','Event handout'],['sticker','Sticker'],['other','Other (specify)']],
+  email:    [['mailchimp','MailChimp'],['other','Other (specify)']],
+  web:      [['marincentury','MarinCentury.com'],['marincyclists','MarinCyclists.com'],['other','Other (specify)']],
+  social:   [['facebook','Facebook'],['instagram','Instagram'],['strava','Strava'],['other','Other (specify)']],
+  referral: [['other','Partner / site name (specify)']]
+};
+
+function onMediumChange() {
+  var medium = document.getElementById('medium').value;
+  var sourceSel = document.getElementById('source');
+  var otherWrap = document.getElementById('other-wrap');
+  otherWrap.classList.add('hidden');
+  document.getElementById('source-other').value = '';
+  sourceSel.innerHTML = '';
+  if (!medium) {
+    sourceSel.disabled = true;
+    sourceSel.innerHTML = '<option value="">Select medium first</option>';
+    return;
+  }
+  sourceSel.disabled = false;
+  sourceSel.innerHTML = '<option value="">Select...</option>';
+  SOURCES[medium].forEach(function(pair) {
+    var o = document.createElement('option');
+    o.value = pair[0]; o.textContent = pair[1];
+    sourceSel.appendChild(o);
+  });
+  // Referral has only "other" — auto-select it so the text input appears immediately
+  if (medium === 'referral') {
+    sourceSel.value = 'other';
+    onSourceChange();
+  }
+}
+
+function onSourceChange() {
+  var v = document.getElementById('source').value;
   var wrap = document.getElementById('other-wrap');
   if (v === 'other') wrap.classList.remove('hidden');
   else wrap.classList.add('hidden');
-}
-
-function toggleEmailNote() {
-  var v = document.getElementById('dest').value;
-  var note = document.getElementById('email-note');
-  if (v.indexOf('mailto:') === 0) note.classList.remove('hidden');
-  else note.classList.add('hidden');
 }
 
 function enforceSlug(el) {
@@ -391,90 +417,93 @@ function enforceSlug(el) {
 }
 
 function generate() {
-  var ptype = document.getElementById('ptype').value;
+  var medium = document.getElementById('medium').value;
+  var sourceRaw = document.getElementById('source').value;
+  var sourceOther = document.getElementById('source-other').value.trim();
   var dest = document.getElementById('dest').value;
   var location = document.getElementById('location').value.trim();
   var contact = document.getElementById('contact').value.trim();
-  var ptypeOther = document.getElementById('ptype-other').value.trim();
 
-  if (!ptype) { alert('Please select a placement type'); return; }
-  if (ptype === 'other' && !ptypeOther) { alert('Please describe the placement type'); return; }
+  if (!medium) { alert('Please select a medium'); return; }
+  if (!sourceRaw) { alert('Please select a source'); return; }
+  if (sourceRaw === 'other' && !sourceOther) { alert('Please specify the source'); return; }
   if (!location) { alert('Please enter a location or description'); return; }
 
-  var sourceVal = ptype === 'other'
-    ? ptypeOther.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
-    : ptype;
-  var isEmail = dest.indexOf('mailto:') === 0;
+  var sourceVal = sourceRaw === 'other'
+    ? sourceOther.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+    : sourceRaw;
 
-  if (isEmail) {
-    currentURL = dest;
-    document.getElementById('url-section-label').textContent = 'Email Link';
-    document.getElementById('url-label-text').textContent = 'Mailto link (no UTM tracking)';
-    document.getElementById('url-text').textContent = dest.replace('mailto:', '');
-    var grid = document.getElementById('utm-grid');
-    grid.innerHTML = '<span class="utm-key">type</span><span class="utm-val">email</span>'
-      + '<span class="utm-key">to</span><span class="utm-val">' + dest.replace('mailto:','') + '</span>';
-  } else {
-    var isRedPodium = dest.indexOf('redpodium') > -1;
-    var trafficPath = isRedPodium ? 'redpod' : 'website';
-    var utmContent = trafficPath + '_' + location;
-    var registrantsSourceValue = 'source:' + sourceVal
-      + '|medium:print'
-      + '|campaign:2026mc'
-      + '|content:' + utmContent;
+  var utmContent = location; // no redpod_/website_ prefix — starting-point info already in source+medium
+  // Key order matches the UTM passthrough JS on marincentury.com so that
+  // registrants.source is uniform whether the rider lands on RedPodium
+  // directly or via marincentury.com.
+  var registrantsSourceValue = 'source:' + sourceVal
+    + '|medium:' + medium
+    + '|content:' + utmContent
+    + '|campaign:2026mc';
 
-    var params = {
-      utm_source: sourceVal,
-      utm_medium: 'print',
-      utm_campaign: '2026mc',
-      utm_content: utmContent
-    };
-    // Only append registrants.source directly to RedPodium URLs.
-    // For MarinCentury.com, we still show the exact value in the summary
-    // so the team can verify what should flow through to RedPodium.
-    if (isRedPodium) {
-      params['registrants.source'] = registrantsSourceValue;
-    }
-    var qs = Object.keys(params).map(function(k) {
-      return k + '=' + encodeURIComponent(params[k]);
-    }).join('&');
-    currentURL = dest + (dest.indexOf('?') > -1 ? '&' : '?') + qs;
+  var params = {
+    utm_source: sourceVal,
+    utm_medium: medium,
+    utm_campaign: '2026mc',
+    utm_content: utmContent
+  };
+  var isRedPodium = dest.indexOf('redpodium') > -1;
+  if (isRedPodium) {
+    params['registrants.source'] = registrantsSourceValue;
+  }
+  var qs = Object.keys(params).map(function(k) {
+    return k + '=' + encodeURIComponent(params[k]);
+  }).join('&');
+  currentURL = dest + (dest.indexOf('?') > -1 ? '&' : '?') + qs;
 
-    document.getElementById('url-section-label').textContent = 'Generated UTM URL';
-    document.getElementById('url-label-text').textContent = 'Full URL with tracking parameters';
-    document.getElementById('url-text').textContent = currentURL;
-    var grid = document.getElementById('utm-grid');
-    grid.innerHTML = '';
-    Object.keys(params).forEach(function(k) {
-      grid.innerHTML += '<span class="utm-key">' + k + '</span><span class="utm-val">' + params[k] + '</span>';
-    });
-    if (!isRedPodium) {
-      grid.innerHTML += '<span class="utm-key">registrants.source</span><span class="utm-val">' + registrantsSourceValue + '</span>';
-    }
+  document.getElementById('url-text').textContent = currentURL;
+  var grid = document.getElementById('utm-grid');
+  grid.innerHTML = '';
+  Object.keys(params).forEach(function(k) {
+    grid.innerHTML += '<span class="utm-key">' + k + '</span><span class="utm-val">' + params[k] + '</span>';
+  });
+  // For MarinCentury.com destination, show the registrants.source value
+  // separately so the team can confirm GA/forwarding is passing it through.
+  if (!isRedPodium) {
+    grid.innerHTML += '<span class="utm-key">registrants.source</span><span class="utm-val">' + registrantsSourceValue + '</span>';
   }
 
   currentData = {
     timestamp: new Date().toISOString(),
-    placement_type: ptype === 'other' ? 'other: ' + ptypeOther : ptype,
+    medium: medium,
+    source: sourceRaw === 'other' ? 'other: ' + sourceOther : sourceVal,
     location: location,
     contact: contact,
-    destination: isEmail ? dest.replace('mailto:','') : (dest.indexOf('redpodium') > -1 ? 'RedPodium' : 'MarinCentury.com'),
-    is_email: isEmail,
-    utm_source: isEmail ? '' : sourceVal,
-    utm_medium: isEmail ? '' : 'print',
-    utm_campaign: isEmail ? '' : '2026mc',
-    utm_content: isEmail ? '' : ((dest.indexOf('redpodium') > -1 ? 'redpod' : 'website') + '_' + location),
-    registrants_source: isEmail ? '' : ('source:' + sourceVal + '|medium:print|campaign:2026mc|content:' + ((dest.indexOf('redpodium') > -1 ? 'redpod' : 'website') + '_' + location)),
+    destination: isRedPodium ? 'RedPodium' : 'MarinCentury.com',
+    utm_source: sourceVal,
+    utm_medium: medium,
+    utm_campaign: '2026mc',
+    utm_content: utmContent,
+    registrants_source: registrantsSourceValue,
     full_url: currentURL
   };
 
-  renderQR(currentURL);
+  // Show/hide QR vs. URL-only actions based on medium
+  var qrCard = document.getElementById('qr-card');
+  var urlOnlyCard = document.getElementById('url-only-actions');
+  if (medium === 'print') {
+    qrCard.classList.remove('hidden');
+    urlOnlyCard.classList.add('hidden');
+    renderQR(currentURL);
+  } else {
+    qrCard.classList.add('hidden');
+    urlOnlyCard.classList.remove('hidden');
+  }
+
   document.getElementById('output').classList.remove('hidden');
   document.getElementById('log-status').style.display = 'none';
   document.getElementById('save-btn').textContent = 'Save to Tracking Sheet';
   document.getElementById('save-btn').classList.remove('saved');
-  document.getElementById('copy-btn').textContent = 'Copy URL';
-  document.getElementById('copy-btn').classList.remove('copied');
+  ['copy-btn','copy-btn-qr'].forEach(function(id){
+    var b = document.getElementById(id);
+    if (b) { b.textContent = 'Copy URL'; b.classList.remove('copied'); }
+  });
   document.getElementById('output').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -542,21 +571,23 @@ function addLogo(ctx, size) {
 
 function copyURL() {
   if (!currentURL) return;
-  var textToCopy = currentURL.indexOf('mailto:') === 0 ? currentURL.replace('mailto:','') : currentURL;
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(textToCopy);
+    navigator.clipboard.writeText(currentURL);
   } else {
     var ta = document.createElement('textarea');
-    ta.value = textToCopy;
+    ta.value = currentURL;
     document.body.appendChild(ta);
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
   }
-  var btn = document.getElementById('copy-btn');
-  btn.textContent = 'Copied!';
-  btn.classList.add('copied');
-  setTimeout(function() { btn.textContent = 'Copy URL'; btn.classList.remove('copied'); }, 2000);
+  ['copy-btn','copy-btn-qr'].forEach(function(id) {
+    var btn = document.getElementById(id);
+    if (!btn) return;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(function() { btn.textContent = 'Copy URL'; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 function downloadQR(format) {
