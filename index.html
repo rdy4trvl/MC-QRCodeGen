@@ -308,9 +308,9 @@ select{cursor:pointer}
         </select>
       </div>
       <div class="full-width">
-        <label>Location / Description</label>
-        <input type="text" id="location" placeholder="e.g. sports_basement_presidio, jan_newsletter, homepage_hero" oninput="enforceSlug(this)">
-        <div class="field-hint">Lowercase with underscores only — no spaces (e.g. <code>sports_basement_presidio</code>, <code>jan_newsletter</code>). This becomes the <code>utm_content</code> value.</div>
+        <label>Date / Location</label>
+        <input type="text" id="location" placeholder="e.g. 2026_04_21_sports_basement_presidio" oninput="enforceSlug(this)">
+        <div class="field-hint">Today's date prefills automatically. Append a location or description, lowercase with underscores only — no spaces (e.g. <code>2026_04_21_sports_basement_presidio</code>). This becomes the <code>utm_content</code> value.</div>
       </div>
       <div class="full-width">
         <label>Contact Person (optional)</label>
@@ -370,6 +370,23 @@ var currentData = {};
 var logoImg = new Image();
 logoImg.src = LOGO_B64;
 
+// Prefill the Date / Location field with today's local date as YYYY_MM_DD_
+// Users append their location/description after the trailing underscore.
+function prefillTodaysDate() {
+  var input = document.getElementById('location');
+  if (!input || input.value) return; // don't overwrite if user already typed
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  input.value = y + '_' + m + '_' + day + '_';
+}
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', prefillTodaysDate);
+} else {
+  prefillTodaysDate();
+}
+
 // Source options per medium. "other" always reveals a free-text input.
 var SOURCES = {
   print:    [['postcard','Postcard'],['yardsign','Yard sign'],['flyer','Flyer'],['banner','Banner'],['poster','Poster'],['event','Event handout'],['sticker','Sticker'],['other','Other (specify)']],
@@ -427,7 +444,14 @@ function generate() {
   if (!medium) { alert('Please select a medium'); return; }
   if (!sourceRaw) { alert('Please select a source'); return; }
   if (sourceRaw === 'other' && !sourceOther) { alert('Please specify the source'); return; }
-  if (!location) { alert('Please enter a location or description'); return; }
+  if (!location) { alert('Please enter a date and location'); return; }
+  // Guard against submitting with only the prefilled date (e.g. "2026_04_21_")
+  if (/^\d{4}_\d{2}_\d{2}_?$/.test(location)) {
+    alert('Please add a location or description after the date');
+    return;
+  }
+  // Strip any trailing underscore so utm_content is clean
+  location = location.replace(/_+$/, '');
 
   var sourceVal = sourceRaw === 'other'
     ? sourceOther.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
